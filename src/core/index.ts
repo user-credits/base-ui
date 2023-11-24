@@ -1,3 +1,3 @@
-export {UserPreferences} from './UserPreferences';
-export {formatDate, safeString} from './util'
-export * from './dto/index.js';
+export * from "./dto/index.js";
+export { UserPreferences } from "./UserPreferences";
+export { formatDate, safeString } from "./util";
