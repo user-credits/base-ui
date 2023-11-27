@@ -26,5 +26,9 @@ export interface IResourceResolver {
     data: M,
   ): EntityDto<K, M>;
 
+  /**
+   * returns a setting or resolves an ioc instance
+   * @param domain
+   */
   getSetting<D extends IResourceDomain>(domain: D): unknown;
 }

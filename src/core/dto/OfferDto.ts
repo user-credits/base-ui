@@ -20,6 +20,6 @@ export class OfferDto<K extends IMinimalId> extends EntityDto<K, IOffer<K>> {
   }
 
   get higlighted(): boolean {
-    return this.highlightingMessage != null;
+    return this.highlightingMessage.length > 0;
   }
 }

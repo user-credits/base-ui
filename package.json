@@ -2,7 +2,7 @@
   "name": "@user-credits/base-ui",
   "author": "Zied Hamdi",
   "type": "module",
-  "version": "0.0.2-alpha",
+  "version": "1.0.0-beta",
   "license": "MIT",
   "keywords": [
     "user-credits",
