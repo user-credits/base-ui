@@ -3,10 +3,10 @@ import type {
   IMinimalId,
   ISubscription,
 } from "@user-credits/core";
-import * as console from "console";
 
 import { UserPreferences } from "../UserPreferences";
 import { ConsumptionDto } from "./ConsumptionDto";
+import { ISubscriptionStats } from "./ISubscriptionStats";
 
 export type Status = "ok" | "warn" | "error";
 const DEFAULT_USER_PREFERENCES = new UserPreferences();
@@ -27,16 +27,39 @@ export class OfferGroupStatusSummary<K extends IMinimalId> {
   protected _consumption: ConsumptionDto<K> | undefined;
   protected _name: string = "noname";
   protected _totalPurchasedTokens: number = 0;
+  protected _purchaseGroup: ISubscriptionStats<K>[];
 
   constructor(
-    protected _purchaseGroup: ISubscription<K>[],
+    protected rawPurchaseGroup: ISubscription<K>[],
     protected _active: IActivatedOffer | null = null,
     protected userPreferences: UserPreferences = DEFAULT_USER_PREFERENCES,
   ) {
-    this._purchaseGroup = _purchaseGroup.sort(
-      (a: ISubscription<K>, b: ISubscription<K>) =>
-        new Date(a.starts).getTime() - new Date(b.starts).getTime(),
+    this._totalPurchasedTokens = rawPurchaseGroup.reduce(
+      (acc: number, item) => (item.status === "paid" ? acc + item.tokens : acc),
+      0,
     );
+    let remaining = this._active?.tokens || 0;
+
+    const firstToExpireFirst = rawPurchaseGroup.sort(
+      (a: ISubscription<K>, b: ISubscription<K>) =>
+        new Date(b.expires).getTime() - new Date(a.expires).getTime(),
+    );
+
+    const purchaseGroupWithStats: ISubscriptionStats<K>[] = [];
+    for (const item of firstToExpireFirst) {
+      purchaseGroupWithStats.push({
+        ...item,
+        remaining:
+          remaining > item.tokens
+            ? item.tokens
+            : remaining >= 0
+              ? remaining
+              : 0,
+      });
+      remaining = remaining - item.tokens;
+    }
+
+    this._purchaseGroup = purchaseGroupWithStats.reverse();
     this.calculateStatus();
   }
 
@@ -50,12 +73,6 @@ export class OfferGroupStatusSummary<K extends IMinimalId> {
     // start with any, and override with more representative data if any
     // NOTE: this could evolve to picking the last expiry date element (or creation date) to represent with the last active one
     this._activeSubscription = this._purchaseGroup[0];
-
-    for (const subscription of this._purchaseGroup) {
-      if (subscription.status === "paid") {
-        this._totalPurchasedTokens += subscription.tokens;
-      }
-    }
 
     for (const subscription of this._purchaseGroup) {
       if (subscription.status === "paid" && !this._active)
